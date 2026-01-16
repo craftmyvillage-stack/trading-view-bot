@@ -6,7 +6,7 @@ import logging
 
 # Set base path to the directory containing main.py
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
-PYTHON_PATH = os.path.join(BASE_PATH, "Python")
+PYTHON_PATH = BASE_PATH
 
 # Add Python directory to path to allow imports from Python.the
 if PYTHON_PATH not in sys.path:
