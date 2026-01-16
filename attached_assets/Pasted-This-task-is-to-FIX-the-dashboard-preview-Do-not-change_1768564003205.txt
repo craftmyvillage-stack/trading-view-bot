@@ -1,0 +1,107 @@
+This task is to FIX the dashboard preview.
+Do not change trading logic or bot logic.
+
+========================================
+STEP 1: ENSURE SINGLE ENTRY POINT
+========================================
+
+Use ONLY `main.py` as the entry point.
+
+`main.py` must:
+- Start all background bot loops (market data, signals, paper trading)
+- Start the dashboard web server
+
+No other file should independently start a server.
+
+========================================
+STEP 2: DASHBOARD SERVER RESPONSIBILITY
+========================================
+
+`dashboard_api.py` must:
+- Create a web server (Flask or FastAPI)
+- Expose a root route `/`
+- Serve `index.html` on `/`
+
+Example behavior (conceptual):
+GET /
+→ returns index.html (HTML content, not JSON)
+
+========================================
+STEP 3: FORCE SERVER START
+========================================
+
+Ensure there is a clearly callable function like:
+
+- start_dashboard_server()
+
+This function MUST be explicitly called from `main.py`.
+
+Do NOT rely on:
+- if __name__ == "__main__" inside dashboard_api.py alone
+- implicit imports
+
+========================================
+STEP 4: PORT & HOST (REPLIT SAFE)
+========================================
+
+Start the server on:
+- host = "0.0.0.0"
+- port = environment PORT if available, otherwise 3000
+
+This is mandatory for Replit Preview.
+
+========================================
+STEP 5: INDEX FILE PATH
+========================================
+
+Ensure `index.html` path is correct.
+
+Allowed:
+- absolute path resolution
+- using the folder where index.html exists
+
+If file not found → STOP and log error.
+
+========================================
+STEP 6: CONSOLE CONFIRMATION LOGS
+========================================
+
+On successful server start, print EXACTLY ONE line:
+
+"DASHBOARD READY → http://0.0.0.0:<PORT>"
+
+This log is required for validation.
+
+========================================
+STEP 7: PREVENT DOUBLE START
+========================================
+
+Ensure:
+- Server is started ONLY ONCE
+- No duplicate thread/process starts
+
+If server already running, skip restart.
+
+========================================
+STEP 8: VALIDATION
+========================================
+
+After changes:
+- Replit Preview must show the dashboard UI
+- Console must show "DASHBOARD READY"
+- No ImportError or port conflict
+
+If Preview is still blank:
+- Print clear error message
+- Do not silently fail
+
+========================================
+RULES
+========================================
+
+- Do NOT modify trading logic
+- Do NOT refactor strategies
+- Do NOT add new files
+- Only fix preview + serving
+
+End task.
