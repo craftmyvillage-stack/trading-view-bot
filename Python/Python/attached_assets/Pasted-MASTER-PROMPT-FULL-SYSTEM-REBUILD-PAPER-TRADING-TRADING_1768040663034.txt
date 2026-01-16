@@ -1,0 +1,337 @@
+MASTER PROMPT — FULL SYSTEM REBUILD (PAPER TRADING + TRADINGVIEW DATA)
+🎯 OBJECTIVE (VERY CLEAR)
+
+Fix and complete the existing intraday trading bot system so that:
+
+All existing bots are properly wired together
+
+Bot starts paper trading immediately
+
+Market data is fetched from TradingView (or TradingView-style public data)
+
+Trades are simulated internally (NO real broker)
+
+All trade, PnL, and signal data flows correctly to the dashboard
+
+No new unnecessary files are created
+
+No tokens or credentials are required
+
+📁 FILES (STRICT — DO NOT CREATE EXTRA FILES)
+
+Use ONLY these existing files:
+
+dashboard_api.py
+event_logger.py
+market_data_and_signal.py
+state_manager.py
+trade_execution_and_mode.py
+trade_management_and_risk.py
+index.html (inline CSS only)
+
+
+❌ Do NOT add React
+❌ Do NOT add CSS/JS files
+❌ Do NOT remove any existing file
+
+⚙️ SYSTEM MODE
+MODE = PAPER_TRADING
+BROKER = NONE
+DATA_SOURCE = TRADINGVIEW
+TOKENS = NOT REQUIRED
+
+🧠 CORE ARCHITECTURE (MANDATORY)
+🔹 Central Orchestrator (IMPORTANT)
+
+Create a main execution loop (can live inside dashboard_api.py or state_manager.py) that runs continuously and performs this pipeline:
+
+Market Data
+   ↓
+Signal Generation
+   ↓
+Trade Execution (Paper)
+   ↓
+Trade Management & Risk
+   ↓
+Event Logging
+   ↓
+State Update
+   ↓
+Dashboard Exposure
+
+
+No bot should work in isolation.
+
+📊 MARKET DATA (CRITICAL POINT)
+🔹 Source
+
+Use TradingView-style candle data
+
+If direct TradingView fetch is not possible:
+
+Use a public OHLC feed
+
+Or simulate TradingView candles realistically
+
+🔹 Implement in:
+
+market_data_and_signal.py
+
+Responsibilities:
+
+Fetch OHLC data (1m / 5m)
+
+Support multiple symbols:
+
+NIFTY
+
+BANKNIFTY
+
+BTCUSDT
+
+Normalize data into a common format
+
+Example:
+
+{
+  "symbol": "NIFTY",
+  "open": 22410,
+  "high": 22440,
+  "low": 22390,
+  "close": 22430,
+  "timestamp": "2026-01-10 09:20"
+}
+
+📈 SIGNAL GENERATION
+
+In market_data_and_signal.py:
+
+Generate BUY / SELL / HOLD signals
+
+Use:
+
+Trend direction
+
+Momentum
+
+Volatility filter
+
+Attach confidence score
+
+Example:
+
+{
+  "signal": "BUY",
+  "confidence": 0.78,
+  "reason": ["Trend Up", "Momentum Strong"]
+}
+
+
+Send signal to StateManager.
+
+💼 PAPER TRADE EXECUTION
+
+In trade_execution_and_mode.py:
+
+Read signals from StateManager
+
+Check:
+
+Max active trades = 2
+
+Capital per trade = ₹1000
+
+Create simulated trade object
+
+Assign:
+
+Entry price
+
+Quantity (paper)
+
+Trade ID
+
+Send trade to:
+
+TradeManagementEngine
+
+EventLogger
+
+StateManager
+
+🛡️ TRADE MANAGEMENT & RISK
+
+In trade_management_and_risk.py:
+
+Responsibilities:
+
+Monitor active trades
+
+Apply:
+
+Trailing stop loss
+
+Fixed SL
+
+Time-based exit (2:30 PM)
+
+Enforce:
+
+Daily loss limit ₹150
+
+Kill switch if breached
+
+On exit:
+
+Calculate PnL
+
+Notify ExecutionEngine
+
+Update StateManager
+
+Log via EventLogger
+
+🧾 EVENT LOGGING
+
+In event_logger.py:
+
+Log:
+
+Signals
+
+Trade entries
+
+Trade exits
+
+PnL
+
+Maintain:
+
+Win / loss count
+
+Total PnL
+
+Expose structured summaries for charts
+
+🧠 STATE MANAGER (SINGLE SOURCE OF TRUTH)
+
+In state_manager.py:
+
+Store:
+
+Latest market data
+
+Latest signal
+
+Active trades
+
+Closed trades
+
+Daily PnL
+
+System mode & risk flags
+
+Provide read-only access to:
+
+Dashboard
+
+Execution engine
+
+Risk engine
+
+🌐 DASHBOARD API
+
+In dashboard_api.py:
+
+Expose APIs:
+
+/status
+/summary
+/trades/active
+/trades/closed
+/charts/pnl
+/charts/winloss
+
+
+Serve:
+
+index.html
+
+
+No trading logic here.
+
+🖥️ DASHBOARD UI (index.html)
+REQUIREMENTS:
+
+Inline CSS only
+
+Dark professional trading terminal look
+
+No marketing UI
+
+MUST DISPLAY:
+
+System status bar
+
+Total PnL (circle chart)
+
+Win/Loss mountain chart with filters:
+
+Time
+
+Market
+
+Active trades table
+
+Closed trades table (scroll down)
+
+Dashboard must poll backend every 2 seconds.
+
+🔄 DATA FLOW RULES
+
+No duplicate trades
+
+No missing updates
+
+All state changes must go through StateManager
+
+All logs must go through EventLogger
+
+🚫 STRICTLY FORBIDDEN
+
+Live trading
+
+Broker APIs
+
+Tokens
+
+Hardcoded credentials
+
+Random mock UI text
+
+🟢 SUCCESS CRITERIA
+
+System is considered COMPLETE when:
+✔ Paper trades start automatically
+✔ Market data updates continuously
+✔ Trades enter & exit logically
+✔ PnL updates correctly
+✔ Dashboard shows real numbers
+✔ No crashes
+
+Final log:
+
+[SYSTEM READY] Paper trading live with TradingView data
+
+🧠 FINAL NOTE
+
+This is foundation-grade infrastructure.
+Once this works, adding:
+
+Dhan sandbox
+
+Google Drive
+
+AI learning
+
+will be easy & safe.

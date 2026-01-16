@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bot Thinking Terminal</title>
+    <style>
+        body { background: #0b0e11; color: #d9d9d9; font-family: 'Courier New', monospace; margin: 0; padding: 20px; font-size: 14px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .card { background: #1e2329; padding: 20px; border-radius: 8px; border: 1px solid #2b2f36; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        h2 { margin-top: 0; color: #f0b90b; font-size: 18px; border-bottom: 1px solid #2b2f36; padding-bottom: 10px; }
+        .status-bar { display: flex; justify-content: space-between; margin-bottom: 20px; background: #1e2329; padding: 15px 25px; border-radius: 8px; border: 1px solid #2b2f36; }
+        .pnl-pos { color: #0ecb81; font-weight: bold; }
+        .pnl-neg { color: #f6465d; font-weight: bold; }
+        .thinking-item { margin-bottom: 10px; }
+        .label { color: #848e9c; font-weight: bold; }
+        .value { color: #eaecef; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #2b2f36; }
+        th { color: #848e9c; }
+        .log-entry { margin-bottom: 8px; border-left: 3px solid #f0b90b; padding-left: 10px; font-style: italic; }
+        .confidence-bar { height: 4px; background: #2b2f36; margin-top: 5px; }
+        .confidence-fill { height: 100%; background: #f0b90b; }
+        .risk-high { color: #f6465d; }
+    </style>
+</head>
+<body>
+    <div class="status-bar">
+        <div>STATUS: <span id="status">OFFLINE</span></div>
+        <div>MODE: <span id="mode">PAPER</span></div>
+        <div id="wallet-info" style="display: flex; gap: 20px;">
+            <div>BALANCE: ₹<span id="paper-balance">0.00</span></div>
+            <div>FREE: ₹<span id="free-balance">0.00</span></div>
+            <div>MARGIN: ₹<span id="used-margin">0.00</span></div>
+            <div>UNREALIZED: <span id="unrealized-pnl">0.00</span></div>
+        </div>
+        <div>DAILY PNL: <span id="daily-pnl">0.00</span></div>
+        <div>STATE: <span id="current-state" style="color: #f0b90b;">BOOTING</span></div>
+    </div>
+
+    <div class="grid">
+        <div class="card">
+            <h2>🧠 Bot Thinking Engine</h2>
+            <div id="thinking-content">
+                <div class="thinking-item"><span class="label">Current Market:</span> <span id="market" class="value">-</span></div>
+                <div class="thinking-item"><span class="label">Market Mode:</span> <span id="market-mode" class="value">-</span></div>
+                <div class="thinking-item"><span class="label">Signal Type:</span> <span id="signal-type" class="value">-</span></div>
+                <div class="thinking-item">
+                    <span class="label">Confidence:</span> <span id="confidence" class="value">0%</span>
+                    <div class="confidence-bar"><div id="confidence-fill" class="confidence-fill" style="width: 0%"></div></div>
+                </div>
+                <div class="thinking-item"><span class="label">Indicator Logic:</span> <div id="indicator-explanation" class="value" style="font-size: 13px; margin-top: 5px;">-</div></div>
+                <div class="thinking-item"><span class="label">Trade Decision:</span> <div id="decision-reason" class="value" style="font-size: 13px; color: #f0b90b; margin-top: 5px;">-</div></div>
+                <div class="thinking-item"><span class="label">Rejection Reason:</span> <span id="rejection-reason" class="value" style="color: #f6465d;">-</span></div>
+                <div class="thinking-item"><span class="label">Risk Score:</span> <span id="risk-score" class="value">0</span>/100</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📝 Narrative Logs</h2>
+            <div id="logs-container" style="max-height: 400px; overflow-y: auto;">
+                <div class="log-entry">Waiting for system logs...</div>
+            </div>
+        </div>
+
+        <div class="card" style="grid-column: span 2;">
+            <h2>📊 Active Positions</h2>
+            <table id="active-trades">
+                <thead><tr><th>Trade ID</th><th>Symbol</th><th>Dir</th><th>Entry Price</th><th>Qty</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        async function updateDashboard() {
+            try {
+                const statusRes = await fetch('/status');
+                const statusData = await statusRes.json();
+                
+                // Status Bar
+                document.getElementById('status').innerText = statusData.status;
+                document.getElementById('mode').innerText = statusData.mode;
+                
+                // Wallet Info
+                if (statusData.wallet) {
+                    document.getElementById('paper-balance').innerText = statusData.wallet.paper_balance.toFixed(2);
+                    document.getElementById('free-balance').innerText = statusData.wallet.free_balance.toFixed(2);
+                    document.getElementById('used-margin').innerText = statusData.wallet.used_margin.toFixed(2);
+                    const upnlEl = document.getElementById('unrealized-pnl');
+                    upnlEl.innerText = statusData.wallet.unrealized_pnl.toFixed(2);
+                    upnlEl.className = statusData.wallet.unrealized_pnl >= 0 ? 'pnl-pos' : 'pnl-neg';
+                }
+
+                const pnlEl = document.getElementById('daily-pnl');
+                pnlEl.innerText = statusData.daily_pnl.toFixed(2);
+                pnlEl.className = statusData.daily_pnl >= 0 ? 'pnl-pos' : 'pnl-neg';
+                document.getElementById('current-state').innerText = statusData.thinking.current_state;
+
+                // Thinking Engine
+                document.getElementById('market').innerText = statusData.thinking.current_market;
+                document.getElementById('market-mode').innerText = statusData.thinking.market_mode;
+                document.getElementById('signal-type').innerText = statusData.thinking.signal_type;
+                document.getElementById('confidence').innerText = statusData.thinking.signal_confidence + '%';
+                document.getElementById('confidence-fill').style.width = statusData.thinking.signal_confidence + '%';
+                document.getElementById('indicator-explanation').innerText = statusData.thinking.indicator_explanation;
+                document.getElementById('decision-reason').innerText = statusData.thinking.trade_decision_reason;
+                document.getElementById('rejection-reason').innerText = statusData.thinking.trade_rejection_reason;
+                const riskEl = document.getElementById('risk-score');
+                riskEl.innerText = statusData.thinking.risk_score;
+                riskEl.className = statusData.thinking.risk_score > 70 ? 'risk-high' : 'value';
+
+                // Narrative Logs
+                const logsRes = await fetch('/logs/recent');
+                const logs = await logsRes.json();
+                const logsContainer = document.getElementById('logs-container');
+                logsContainer.innerHTML = '';
+                logs.forEach(l => {
+                    const div = document.createElement('div');
+                    div.className = 'log-entry';
+                    div.innerText = `[${l.timestamp.split('T')[1].split('.')[0]}] ${l.message}`;
+                    logsContainer.appendChild(div);
+                });
+
+                // Active Trades
+                const tradesRes = await fetch('/trades/active');
+                const trades = await tradesRes.json();
+                const tbody = document.querySelector('#active-trades tbody');
+                tbody.innerHTML = '';
+                trades.forEach(t => {
+                    const row = `<tr><td>${t.trade_id}</td><td>${t.symbol}</td><td>${t.direction}</td><td>${t.entry_price.toFixed(2)}</td><td>${t.quantity}</td></tr>`;
+                    tbody.innerHTML += row;
+                });
+            } catch (e) { console.error("Poll failed", e); }
+        }
+        setInterval(updateDashboard, 2000);
+        updateDashboard();
+    </script>
+</body>
+</html>
