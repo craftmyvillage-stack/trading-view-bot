@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+app = FastAPI()
 import sys
 import os
 import threading
