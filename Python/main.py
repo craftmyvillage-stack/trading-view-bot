@@ -1,3 +1,4 @@
+from fastapi import FastAPI
 import sys
 import os
 import threading
@@ -19,6 +20,7 @@ from the.trade_management_and_risk import TradeManagementEngine
 from the.session_engine import session_manager
 from the.event_logger import EventLogger
 from the.dashboard_api import start_dashboard_server
+app = FastAPI()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -73,10 +75,11 @@ def run_trading_loop():
             event_logger.log_system_event("ERROR", "MainLoop", f"Critical loop error: {e}")
             time.sleep(5)
 
-if __name__ == "__main__":
-    # Start Trading Bot in a background thread
+@app.on_event("startup")
+def start_bot():
     trading_thread = threading.Thread(target=run_trading_loop, daemon=True)
     trading_thread.start()
-    
-    # Start Dashboard Server (Blocks main thread)
-    start_dashboard_server()
+
+@app.get("/")
+def health():
+    return {"status": "Trading bot running 24/7"}
